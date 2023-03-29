@@ -2,6 +2,7 @@ const fs = require('fs'); // Data 폴더에 만든 json 파일에 저장하기 �
 const path = require('path');
 
 const express = require('express');
+const uuid = require('uuid');
 
 const app = express();
 
@@ -32,6 +33,22 @@ app.get('/restaurants',(req,res)=>{
   });
 });
 
+app.get('/restaurants/:id',(req,res)=>{ // 등록된 데이터의 개수가 몇 개인지 예측이 불가하므로 동적으로 url을 생성해야함
+  const restaurantId =  req.params.id;
+  const filePath = path.join(__dirname,'Data','restaurants.json');
+
+  const fileData = fs.readFileSync(filePath); // 이 상태는 그냥 텍스트 형태로 빈 배열안에 넣어질 뿐..
+  const storedRestaurants = JSON.parse(fileData);
+
+  for (const restaurant of storedRestaurants){
+    if(restaurant.id === restaurantId){ // url에 등록된 restaurantId와 일치하는 항목..
+      return res.render('restaurant-details',{restaurant : restaurant}); // 매칭이 되는 id를 발견할 경우 그 즉시 종료
+    } 
+
+    res.render('404'); // 이 과정이 없을 경우 페이지가 시간초과할 때까지 로딩되고 무슨 일이 일어나는지 알지못함..
+  }
+});
+
 app.get('/recommend',(req,res)=>{
   // const htmlFilePath = path.join(__dirname,'views','recommend.html');
   // res.sendFile(htmlFilePath);
@@ -39,13 +56,14 @@ app.get('/recommend',(req,res)=>{
 });
 
 app.post('/recommend',(req,res)=>{
-  const restaurantName = req.body; // input name 속성을 통해 입력한 값을 가져올 수 있음 {객체 타입}
+  const restaurant = req.body; // input name 속성을 통해 입력한 값을 가져올 수 있음 {객체 타입}
+  restaurant.id = uuid.v4();
   const filePath = path.join(__dirname,'Data','restaurants.json');
 
   const fileData = fs.readFileSync(filePath); // 이 상태는 그냥 텍스트 형태로 빈 배열안에 넣어질 뿐..
   const storedRestaurants = JSON.parse(fileData);
 
-  storedRestaurants.push(restaurantName);
+  storedRestaurants.push(restaurant);
 
   fs.writeFileSync(filePath, JSON.stringify(storedRestaurants));
 
@@ -64,5 +82,12 @@ app.get('/about',(req,res)=>{
   res.render('about');
 });
 
+app.use((req,res) => { // 일일이 직접 오류페이지를 추가하지 않고 미들웨어로 생성해서 모든 페이지에 대해 처리함.
+  res.status(404).render('404'); // 브라우저 상에서 오류 처리는 되지만, 지금 어떤 상태인지 파악할 수는 없기에 status메서드를 통해
+});                           // 상태코드를 임의로 지정해줄 수 있음.        
+
+app.use((error,req,res,next) => {
+  res.status(500).render('500');
+});
 
 app.listen(3000);

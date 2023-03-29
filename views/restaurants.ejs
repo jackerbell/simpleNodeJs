@@ -15,7 +15,7 @@
         <p>Find your next favorite restaurants with help of our other users!</p>
         <p>We found <%= numberOfRestaurants %> restaurant!</p>
         <ul id="restaurants-list">
-          <% for (const restaurant of restaurants) { %>
+          <% for (const restaurant of restaurants) { %> 
             <%- include('includes/restaurants/restaurants-item',{restaurant:restaurant}) %> 
           <% } %>
         </ul>
